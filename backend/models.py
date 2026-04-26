@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import datetime
 import os
 
-DB_URL = "sqlite:///./promptveil_auth.db"
+DB_URL = "sqlite:///./shadowvault_auth.db"
 
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

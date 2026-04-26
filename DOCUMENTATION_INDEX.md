@@ -1,6 +1,6 @@
 # 📑 COMPLETE DOCUMENTATION INDEX
 
-## Google OAuth 2.0 Authentication System for PromptVeil
+## Google OAuth 2.0 Authentication System for ShadowVault
 
 **Implementation Status:** ✅ COMPLETE (100%)  
 **Deployment Ready:** ✅ YES  
@@ -182,7 +182,7 @@ Start here:
 ### Documentation Files (Root Directory)
 
 ```
-PromptVeil final/
+ShadowVault final/
 ├── 00_READ_ME_FIRST.md              ← Start here (checklist)
 ├── START_HERE.md                    ← Executive summary
 ├── QUICK_START.md                   ← 3-step setup (ESSENTIAL)

@@ -97,7 +97,7 @@ GOOGLE_CLIENT_ID=187376036769-dqkv2o8s3auue9u3soglp8elo6jh79gi.apps.googleuserco
 SECRET_KEY=your_secret_key_here_change_later
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-DATABASE_URL=sqlite:///./promptveil_auth.db
+DATABASE_URL=sqlite:///./shadowvault_auth.db
 ```
 
 ### Step 3: Install
@@ -166,7 +166,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ### Port Configuration
 - **Backend:** `http://localhost:8000`
 - **Frontend:** `http://localhost:5173`
-- **Database:** `backend/promptveil_auth.db` (auto-created)
+- **Database:** `backend/shadowvault_auth.db` (auto-created)
 
 ---
 
@@ -407,7 +407,7 @@ Everything is implemented and tested. Just:
 
 ## 🎉 You're All Set!
 
-Your PromptVeil application now has professional-grade Google authentication. Everything is implemented, tested, and documented.
+Your ShadowVault application now has professional-grade Google authentication. Everything is implemented, tested, and documented.
 
 ### Start Here:
 1. Open `START_HERE.md` 

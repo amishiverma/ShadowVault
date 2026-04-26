@@ -1,8 +1,8 @@
-# 🛡️ PromptVeil
+# 🛡️ ShadowVault
 
-**PromptVeil** is an advanced, real-time Large Language Model (LLM) security mainframe and monitoring dashboard. Built specifically to tackle the rising vectors of Prompt Injection, System Override attacks, and Semantic Jailbreaks, PromptVeil serves as a proactive defense shield for deploying AI applications safely.
+**ShadowVault** is an advanced, real-time Large Language Model (LLM) security mainframe and monitoring dashboard. Built specifically to tackle the rising vectors of Prompt Injection, System Override attacks, and Semantic Jailbreaks, ShadowVault serves as a proactive defense shield for deploying AI applications safely.
 
-![PromptVeil Threat Dashboard](https://img.shields.io/badge/Status-Active_Defense-success)
+![ShadowVault Threat Dashboard](https://img.shields.io/badge/Status-Active_Defense-success)
 ![React](https://img.shields.io/badge/Frontend-React_18-61DAFB?logo=react)
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi)
 ![NVIDIA](https://img.shields.io/badge/LLM_Engine-NVIDIA_Nemotron-76B900?logo=nvidia)

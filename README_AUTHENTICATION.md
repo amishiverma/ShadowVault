@@ -2,7 +2,7 @@
 
 ## 🎉 Complete Implementation - X10 Effort
 
-Your PromptVeil application now has **complete Google OAuth 2.0 authentication** with professional-grade security, beautiful UI, and full session management.
+Your ShadowVault application now has **complete Google OAuth 2.0 authentication** with professional-grade security, beautiful UI, and full session management.
 
 ---
 
@@ -452,7 +452,7 @@ Your implementation is complete when:
 3. Run both servers
 4. Test the login flow
 
-**Your PromptVeil application is now production-ready with professional Google authentication!** 🎉
+**Your ShadowVault application is now production-ready with professional Google authentication!** 🎉
 
 ---
 

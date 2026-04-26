@@ -353,7 +353,7 @@ New Components: 3 React components
 ## 🗂️ Directory Structure After Changes
 
 ```
-PromptVeil final/
+ShadowVault final/
 ├── frontend/
 │   ├── src/
 │   │   ├── contexts/

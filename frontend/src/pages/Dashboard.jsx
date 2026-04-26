@@ -24,7 +24,7 @@ function Message({ msg }) {
       <div className="sc-alert">
         <div className="sc-alert-header">
           <span className="sc-alert-icon">🛡</span>
-          <span>PromptVeil Blocked This Request</span>
+          <span>ShadowVault Blocked This Request</span>
           <span className={`sc-badge sc-badge--${msg.level}`}>{msg.level?.toUpperCase()}</span>
         </div>
         <p className="sc-alert-body">{msg.description}</p>
@@ -144,7 +144,7 @@ export default function Dashboard() {
       setIsTyping(false);
       setMessages(prev => [...prev, {
         role: 'ai',
-        content: '⚠️ Unable to connect to PromptVeil backend. Make sure the Python server is running on port 8000.',
+        content: '⚠️ Unable to connect to ShadowVault backend. Make sure the Python server is running on port 8000.',
         time: now(),
       }]);
     }
@@ -177,7 +177,7 @@ export default function Dashboard() {
             {/* System welcome only visible once chatting has started */}
             <Message msg={{
               role: 'ai',
-              content: "Hello! I'm your PromptVeil-secured AI assistant. Every message you send is scanned by the dual-layer defense engine before reaching the AI. Ask me anything!",
+              content: "Hello! I'm your ShadowVault-secured AI assistant. Every message you send is scanned by the dual-layer defense engine before reaching the AI. Ask me anything!",
               time: now(),
             }} />
 

@@ -87,7 +87,7 @@ GOOGLE_CLIENT_ID=187376036769-dqkv2o8s3auue9u3soglp8elo6jh79gi.apps.googleuserco
 SECRET_KEY=your_secret_key_here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-DATABASE_URL=sqlite:///./promptveil_auth.db
+DATABASE_URL=sqlite:///./shadowvault_auth.db
 ```
 
 ### 2. Install Dependencies (2 minutes)
@@ -430,7 +430,7 @@ Integration:
 ## 🎉 Final Summary
 
 ### What You Have Now
-A **complete, production-ready Google authentication system** for PromptVeil with:
+A **complete, production-ready Google authentication system** for ShadowVault with:
 - Professional login page
 - Secure JWT tokens
 - User management
@@ -488,7 +488,7 @@ Status: PRODUCTION READY ✅
 
 **Thank you for using this implementation!**
 
-Your PromptVeil application now has professional-grade Google authentication.
+Your ShadowVault application now has professional-grade Google authentication.
 
 Start with `00_READ_ME_FIRST.md` or `QUICK_START.md` to begin setup.
 

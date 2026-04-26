@@ -21,7 +21,7 @@ def run_project():
         print("Port 5173 is already free")
 
     # Start Backend
-    backend_path = r"d:\PromptVeil\backend"
+    backend_path = r"d:\ShadowVault\backend"
     print(f"Starting backend from {backend_path}...")
     backend_process = subprocess.Popen(
         [r"venv\Scripts\python.exe", "-m", "uvicorn", "main:app", "--reload", "--port", "8000"],
@@ -32,7 +32,7 @@ def run_project():
     )
     
     # Start Frontend
-    frontend_path = r"d:\PromptVeil\frontend"
+    frontend_path = r"d:\ShadowVault\frontend"
     print(f"Starting frontend from {frontend_path}...")
     frontend_process = subprocess.Popen(
         ["npm", "run", "dev", "--", "--port", "5173"],

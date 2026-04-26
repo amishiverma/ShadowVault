@@ -23,7 +23,7 @@ function Message({ msg }) {
       <div className="sc-alert">
         <div className="sc-alert-header">
           <span className="sc-alert-icon">🛡</span>
-          <span>PromptVeil Blocked This Request</span>
+          <span>ShadowVault Blocked This Request</span>
           <span className={`sc-badge sc-badge--${msg.level}`}>{msg.level?.toUpperCase()}</span>
         </div>
         <p className="sc-alert-body">{msg.description}</p>
@@ -60,7 +60,7 @@ export default function SecureChat() {
   const [messages, setMessages] = useState([
     {
       role: 'ai',
-      content: "Hello! I'm your PromptVeil-secured AI assistant. Every message you send is scanned by the dual-layer defense engine before reaching the AI. Ask me anything!",
+      content: "Hello! I'm your ShadowVault-secured AI assistant. Every message you send is scanned by the dual-layer defense engine before reaching the AI. Ask me anything!",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
   ]);
@@ -154,7 +154,7 @@ export default function SecureChat() {
       setScanStatus({ text: 'Backend Offline', color: '#ef4444' });
       setMessages(prev => [...prev, {
         role: 'ai',
-        content: '⚠️ Unable to connect to PromptVeil backend. Make sure the Python server is running on port 8000.',
+        content: '⚠️ Unable to connect to ShadowVault backend. Make sure the Python server is running on port 8000.',
         time: now(),
       }]);
     }
@@ -180,7 +180,7 @@ export default function SecureChat() {
           </div>
           <div>
             <h2 className="sc-header-title">Secure AI Chat</h2>
-            <p className="sc-header-sub">Protected by PromptVeil dual-layer engine</p>
+            <p className="sc-header-sub">Protected by ShadowVault dual-layer engine</p>
           </div>
         </div>
         <div className="sc-status-pill" style={{ borderColor: scanStatus.color, color: scanStatus.color }}>
@@ -213,7 +213,7 @@ export default function SecureChat() {
               onKeyDown={handleKey}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
-              placeholder="Ask anything — PromptVeil will protect you..."
+              placeholder="Ask anything — ShadowVault will protect you..."
             />
 
             {/* Bottom toolbar row */}

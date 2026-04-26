@@ -27,7 +27,7 @@ gemini_key = os.getenv("GEMINI_API_KEY")
 if gemini_key:
     genai.configure(api_key=gemini_key)
 
-app = FastAPI(title="PromptVeil API", description="Backend for Prompt Injection Defense")
+app = FastAPI(title="ShadowVault API", description="Backend for Prompt Injection Defense")
 
 app.add_middleware(
     CORSMiddleware,
@@ -409,7 +409,7 @@ def combine_analysis(prompt: str, history: list = None) -> dict:
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "message": "PromptVeil API is running", "model": SAFETY_MODEL}
+    return {"status": "ok", "message": "ShadowVault API is running", "model": SAFETY_MODEL}
 
 
 @app.post("/api/analyze")
@@ -520,7 +520,7 @@ async def secure_chat(
 @app.post("/auth/google", response_model=TokenResponse)
 def google_login(request: GoogleTokenRequest, db: Session = Depends(get_db)):
     """
-    Exchange a Google OAuth token for a PromptVeil JWT token.
+    Exchange a Google OAuth token for a ShadowVault JWT token.
     Frontend sends the Google idToken, backend verifies it and creates a user session.
     """
     try:
@@ -555,7 +555,7 @@ def google_login(request: GoogleTokenRequest, db: Session = Depends(get_db)):
                 user.picture = picture
                 db.commit()
         
-        # Create JWT token for PromptVeil app
+        # Create JWT token for ShadowVault app
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": email, "user_id": user.id},

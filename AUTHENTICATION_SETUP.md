@@ -1,7 +1,7 @@
 # 🔐 Google Authentication Setup Guide
 
 ## Overview
-The PromptVeil application now includes complete Google OAuth 2.0 authentication. Users must log in via Google before accessing the dashboard.
+The ShadowVault application now includes complete Google OAuth 2.0 authentication. Users must log in via Google before accessing the dashboard.
 
 ---
 
@@ -56,7 +56,7 @@ GOOGLE_CLIENT_ID=187376036769-dqkv2o8s3auue9u3soglp8elo6jh79gi.apps.googleuserco
 SECRET_KEY=your_super_secret_key_change_me_in_production_with_something_long_and_random
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-DATABASE_URL=sqlite:///./promptveil_auth.db
+DATABASE_URL=sqlite:///./shadowvault_auth.db
 
 # Optional API Keys
 NVIDIA_API_KEY=your_nvidia_api_key_here
@@ -233,7 +233,7 @@ Logout endpoint (optional, JWT is stateless).
 
 ### "User not found" after login
 - Database might not be initialized, restart backend (it auto-creates tables)
-- Check `promptveil_auth.db` file exists in backend directory
+- Check `shadowvault_auth.db` file exists in backend directory
 
 ### "CORS errors"
 - Update `CORS_ORIGINS` in `backend/.env` to include your frontend URL
@@ -266,7 +266,7 @@ CORS_ORIGINS              - Comma-separated list of allowed origins
 
 ## ✅ Implementation Complete
 
-Your PromptVeil application now has:
+Your ShadowVault application now has:
 ✓ Google OAuth 2.0 authentication
 ✓ JWT token management
 ✓ Protected routes

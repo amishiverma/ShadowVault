@@ -36,7 +36,7 @@ export default function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>PromptVeil</h1>
+          <h1>ShadowVault</h1>
           <p className="subtitle">AI Security & Threat Detection Dashboard</p>
         </div>
 

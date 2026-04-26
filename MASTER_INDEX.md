@@ -6,7 +6,7 @@
 
 ## 🚀 THE FIVE-SECOND VERSION
 
-Your PromptVeil app now has professional Google login.
+Your ShadowVault app now has professional Google login.
 
 **Setup time:** 15 minutes  
 **Files to create:** 2 (.env files)  
@@ -177,7 +177,7 @@ GOOGLE_CLIENT_ID=187376036769-dqkv2o8s3auue9u3soglp8elo6jh79gi.apps.googleuserco
 SECRET_KEY=your_secret_key_here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-DATABASE_URL=sqlite:///./promptveil_auth.db
+DATABASE_URL=sqlite:///./shadowvault_auth.db
 
 # 2. Install dependencies
 cd backend && pip install -r requirements.txt
@@ -429,7 +429,7 @@ You know it's working when:
 **A:** See [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) for architecture
 
 ### Q: Where's my data stored?
-**A:** SQLite database in `backend/promptveil_auth.db` (auto-created)
+**A:** SQLite database in `backend/shadowvault_auth.db` (auto-created)
 
 ### Q: Can I use a different database?
 **A:** Yes, modify DATABASE_URL in backend/.env

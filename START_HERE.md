@@ -2,7 +2,7 @@
 
 ## Status: ✅ FULLY IMPLEMENTED & READY TO USE
 
-Your PromptVeil application now has **enterprise-grade Google OAuth 2.0 authentication** with all supporting infrastructure.
+Your ShadowVault application now has **enterprise-grade Google OAuth 2.0 authentication** with all supporting infrastructure.
 
 ---
 
@@ -54,7 +54,7 @@ GOOGLE_CLIENT_ID=187376036769-dqkv2o8s3auue9u3soglp8elo6jh79gi.apps.googleuserco
 SECRET_KEY=test_key_12345678901234567890123456789
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-DATABASE_URL=sqlite:///./promptveil_auth.db
+DATABASE_URL=sqlite:///./shadowvault_auth.db
 ```
 
 ### Step 3: Install & Run
@@ -268,7 +268,7 @@ Logout endpoint (optional)
 - Keep it secret (don't commit to git)
 
 ### About Database
-- Automatically creates `promptveil_auth.db` on first run
+- Automatically creates `shadowvault_auth.db` on first run
 - Stores user profiles (email, name, picture, created_at)
 - Located in backend directory
 - SQLite3 (no separate database server needed)
@@ -445,7 +445,7 @@ For each issue type:
 
 Everything is implemented and ready to use. Follow QUICK_START.md to get running in 3 steps.
 
-**Your PromptVeil application now has professional Google authentication!**
+**Your ShadowVault application now has professional Google authentication!**
 
 ---
 

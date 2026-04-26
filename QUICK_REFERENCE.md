@@ -2,7 +2,7 @@
 
 ## ⚡ 60-Second Overview
 
-Your PromptVeil app now has **professional Google login**:
+Your ShadowVault app now has **professional Google login**:
 - ✅ User clicks "Sign in with Google"
 - ✅ Gets verified with Google's servers
 - ✅ Receives JWT token

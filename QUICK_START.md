@@ -33,7 +33,7 @@ GOOGLE_CLIENT_ID=187376036769-dqkv2o8s3auue9u3soglp8elo6jh79gi.apps.googleuserco
 SECRET_KEY=test_key_change_in_production_12345678901234567890
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-DATABASE_URL=sqlite:///./promptveil_auth.db
+DATABASE_URL=sqlite:///./shadowvault_auth.db
 GEMINI_API_KEY=your_gemini_key_here
 NVIDIA_API_KEY=your_nvidia_key_here
 ```
@@ -327,7 +327,7 @@ CREATE TABLE users (
 );
 ```
 
-Located at: `backend/promptveil_auth.db`
+Located at: `backend/shadowvault_auth.db`
 
 ---
 
@@ -348,7 +348,7 @@ Located at: `backend/promptveil_auth.db`
 
 1. **Development Mode**: In `.env` set `DEBUG=true` for more verbose logs
 2. **Token Inspection**: Open DevTools → Application → Local Storage to see JWT
-3. **Database Inspection**: Use SQLite Browser to inspect `promptveil_auth.db`
+3. **Database Inspection**: Use SQLite Browser to inspect `shadowvault_auth.db`
 4. **CORS Issues**: Update CORS_ORIGINS in backend `.env` if frontend URL changes
 5. **Production**: Use strong SECRET_KEY from `secrets` module, enable HTTPS
 
