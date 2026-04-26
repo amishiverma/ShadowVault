@@ -1,277 +1,99 @@
-import { useState, useRef, useEffect } from 'react';
-import Globe from '../components/Globe';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-// ─── Typing indicator ────────────────────────────────────────────────────────
-function TypingDots() {
-  return (
-    <div className="sc-msg sc-msg--ai">
-      <div className="sc-avatar sc-avatar--ai">AI</div>
-      <div className="sc-bubble sc-bubble--typing">
-        <span className="sc-dot" />
-        <span className="sc-dot" />
-        <span className="sc-dot" />
-      </div>
-    </div>
-  );
-}
-
-// ─── Message bubble ──────────────────────────────────────────────────────────
-function Message({ msg }) {
-  const isUser = msg.role === 'user';
-
-  if (msg.role === 'blocked') {
-    return (
-      <div className="sc-alert">
-        <div className="sc-alert-header">
-          <span className="sc-alert-icon">🛡</span>
-          <span>ShadowVault Blocked This Request</span>
-          <span className={`sc-badge sc-badge--${msg.level}`}>{msg.level?.toUpperCase()}</span>
-        </div>
-        <p className="sc-alert-body">{msg.description}</p>
-        <div className="sc-alert-meta">
-          <span>Risk Score: <b style={{ color: '#f97316' }}>{msg.score}/100</b></span>
-          {msg.threats?.length > 0 && (
-            <span>Vectors: <b>{msg.threats.join(', ')}</b></span>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`sc-msg ${isUser ? 'sc-msg--user' : 'sc-msg--ai'}`}>
-      {!isUser && <div className="sc-avatar sc-avatar--ai">AI</div>}
-      <div className={`sc-bubble ${isUser ? 'sc-bubble--user' : 'sc-bubble--ai'}`}>
-        <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-        {!isUser && msg.score !== undefined && (
-          <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#10b981', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.5rem' }}>
-            🛡️ Safety Rating: {msg.score}/100 (Safe)
-          </div>
-        )}
-        <div className="sc-timestamp">{msg.time}</div>
-      </div>
-      {isUser && <div className="sc-avatar sc-avatar--user">U</div>}
-    </div>
-  );
-}
-
-// ─── Main page ───────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const bottomRef = useRef(null);
-  const textareaRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const hasStarted = messages.length > 0;
+  const navigate = useNavigate();
+  const [prompt, setPrompt] = useState('');
+  const [theme, setTheme] = useState(document.documentElement.getAttribute('data-theme') || 'dark');
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    const observer = new MutationObserver(() => {
+      setTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
-    }
-  }, [input]);
-
-  const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  const handleFileClick = () => {
-    fileInputRef.current?.click();
+  const handleSend = () => {
+    if (!prompt.trim()) return;
+    // Navigate to SecureChat with the initial message
+    navigate('/secure-chat', { state: { initialMessage: prompt } });
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
-
-  const handleSend = async () => {
-    const text = input.trim();
-    if ((!text && !selectedFile) || isTyping) return;
-
-    const userMsg = {
-      role: 'user',
-      content: text + (selectedFile ? ` [Attached: ${selectedFile.name}]` : ''),
-      time: now()
-    };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    const fileToSend = selectedFile;
-    setSelectedFile(null);
-    setIsTyping(true);
-
-    try {
-      const history = messages
-        .filter(m => m.role === 'user' || m.role === 'ai')
-        .map(m => ({ role: m.role, content: m.content }));
-
-      const formData = new FormData();
-      formData.append('prompt', text || '');
-      formData.append('history', JSON.stringify(history || []));
-      if (fileToSend) {
-        formData.append('file', fileToSend);
-      }
-
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/secure-chat`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      setIsTyping(false);
-
-      if (data.status === 'blocked') {
-        setMessages(prev => [...prev, {
-          role: 'blocked',
-          level: data.risk_score > 85 ? 'critical' : data.risk_score > 60 ? 'high' : 'medium',
-          description: data.message,
-          score: data.risk_score,
-          threats: data.threats_found || [],
-          time: now(),
-        }]);
-        return;
-      }
-
-      setMessages(prev => [...prev, { role: 'ai', content: data.reply, score: data.risk_score, time: now() }]);
-
-    } catch (err) {
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        role: 'ai',
-        content: '⚠️ Unable to connect to ShadowVault backend. Make sure the Python server is running on port 8000.',
-        time: now(),
-      }]);
-    }
-  };
-
-  const handleKey = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
       handleSend();
     }
   };
 
+  const isLight = theme === 'light';
+
   return (
-    <div className="sc-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 150px)', position: 'relative' }}>
-
-      {/* ── Landing State / Chat Messages ── */}
-      <div className="dynamic-content-area" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-
-        {!hasStarted ? (
-          // Landing View
-          <div className="landing-view" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '120px', height: '120px', marginBottom: '1.5rem' }}>
-              <Globe />
-            </div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 600, color: '#fff', marginBottom: '0' }}>How can I help you today?</h1>
-          </div>
-        ) : (
-          // Chat View - Let the sc-messages class manage its own overflow as defined in index.css
-          <div className="sc-messages" style={{ padding: '1rem 15%', boxSizing: 'border-box' }}>
-            {/* System welcome only visible once chatting has started */}
-            <Message msg={{
-              role: 'ai',
-              content: "Hello! I'm your ShadowVault-secured AI assistant. Every message you send is scanned by the dual-layer defense engine before reaching the AI. Ask me anything!",
-              time: now(),
-            }} />
-
-            {messages.map((msg, i) => <Message key={i} msg={msg} />)}
-            {isTyping && <TypingDots />}
-            <div ref={bottomRef} />
-          </div>
-        )}
+    <div className="hero-section" style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      minHeight: '82vh',
+      textAlign: 'center',
+      padding: '0 20px'
+    }}>
+      {/* Standardized Orb Section */}
+      <div className="orb-container">
+        <div className="motion-orb"></div>
       </div>
 
-      {/* ── Premium Input Area ── */}
-      <div className="input-container-pinned" style={{ padding: '0 15% 2rem 15%', boxSizing: 'border-box', width: '100%', transition: 'all 0.3s' }}>
-        <div className={`sc-input-glow-wrap ${inputFocused ? 'focused' : ''}`} style={{ borderRadius: '24px', position: 'relative' }}>
-          {selectedFile && (
-            <div style={{
-              position: 'absolute',
-              top: '-35px',
-              left: '1rem',
-              fontSize: '0.8rem',
-              color: '#38bdf8',
-              background: 'rgba(56, 189, 248, 0.1)',
-              padding: '2px 8px',
-              borderRadius: '6px',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              📎 {selectedFile.name}
-              <span
-                onClick={() => setSelectedFile(null)}
-                style={{ cursor: 'pointer', fontWeight: 'bold', color: '#ff5f38' }}
-              >×</span>
-            </div>
-          )}
-          <div className="sc-input-inner" style={{ borderRadius: '22px', background: '#12151f', padding: '1rem 1.25rem 0.8rem' }}>
-            <textarea
-              ref={textareaRef}
-              className="sc-glow-input"
-              rows={1}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              onFocus={() => setInputFocused(true)}
-              onBlur={() => setInputFocused(false)}
-              placeholder="Message Gemini..."
-              style={{ fontSize: '1rem' }}
-            />
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-              accept=".pdf,.csv,text/plain"
-            />
-
-            <div className="sc-toolbar" style={{ marginTop: '0.8rem' }}>
-              <div className="sc-toolbar-left">
-                <button className="sc-tool-btn" title="Attach" onClick={handleFileClick}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
-                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                </button>
-                <button className="sc-tools-chip">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                  </svg>
-                  Tools
-                </button>
-              </div>
-
-              <div className="sc-toolbar-right">
-                <button className="sc-mic-btn" title="Voice input">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" y1="19" x2="12" y2="23" />
-                    <line x1="8" y1="23" x2="16" y2="23" />
-                  </svg>
-                </button>
-                <button
-                  className="sc-glow-send"
-                  onClick={handleSend}
-                  disabled={!input.trim() || isTyping}
-                  title="Send"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+      <h1 style={{ 
+        fontSize: '3.6rem', 
+        fontWeight: '500', 
+        marginBottom: '45px', 
+        letterSpacing: '-0.02em',
+        color: isLight ? '#1a1a1a' : '#ffffff',
+        fontFamily: "'Outfit', sans-serif"
+      }}>
+        How can I help you today?
+      </h1>
+      
+      {/* Standardized Pill-Shaped Input */}
+      <div className="chat-input-wrapper" style={{ 
+        maxWidth: '750px',
+      }}>
+        <div className="chat-input-inner">
+          <input 
+            type="text" 
+            style={{ 
+              width: '100%', 
+              background: 'transparent', 
+              border: 'none', 
+              fontSize: '1.2rem',
+              outline: 'none',
+              color: isLight ? '#1a1a1a' : '#ffffff'
+            }} 
+            placeholder="Ask ShadowVault..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginLeft: '10px' }}>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: isLight ? '#5f6368' : 'rgba(255,255,255,0.5)' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            </button>
+            <button 
+              onClick={handleSend}
+              style={{ 
+                background: isLight ? '#4285f4' : '#6e3cbc', 
+                border: 'none', 
+                borderRadius: '50%', 
+                width: '38px', 
+                height: '38px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'white', 
+                cursor: 'pointer' 
+              }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
           </div>
         </div>
       </div>

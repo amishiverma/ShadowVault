@@ -99,6 +99,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const demoLogin = () => {
+    const mockUser = {
+      name: 'Demo User',
+      email: 'demo@shadowvault.io',
+      picture: null
+    };
+    const mockToken = 'demo-token-' + Date.now();
+    setUser(mockUser);
+    setToken(mockToken);
+    localStorage.setItem('authToken', mockToken);
+    setError(null);
+  };
+
   const value = {
     user,
     token,
@@ -106,6 +119,7 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     logout,
+    demoLogin,
     isAuthenticated: !!token,
   };
 

@@ -9,7 +9,9 @@ from google.auth.transport import requests
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load environment variables from .env file
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
 
 # JWT Config
 SECRET_KEY = os.getenv("SECRET_KEY", "your_super_secret_key_change_me_in_production")
@@ -36,11 +38,12 @@ def verify_google_token(token: str):
 
         # ID token is valid. Get the user's Google Account ID from the decoded token.
         return idinfo
-    except ValueError:
+    except Exception as e:
         # Invalid token
+        print(f"DEBUG: Google Token Verification Failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate Google token",
+            detail=f"Could not validate Google token: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

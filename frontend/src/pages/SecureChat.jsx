@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 // ─── Typing indicator ────────────────────────────────────────────────────────
 function TypingDots() {
@@ -56,6 +57,7 @@ function Message({ msg }) {
 
 // ─── Main page ───────────────────────────────────────────────────────────────
 export default function SecureChat() {
+  const location = useLocation();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
     {
@@ -73,6 +75,60 @@ export default function SecureChat() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // Handle initial message from Dashboard
+  useEffect(() => {
+    if (location.state?.initialMessage) {
+      // Small delay to ensure component is ready
+      const initialText = location.state.initialMessage;
+      // We need to trigger handleSend but with the initialText
+      // Since handleSend depends on 'input', we should probably refactor or use a side effect
+      const sendInitial = async (text) => {
+        setMessages(prev => [...prev, { role: 'user', content: text, time: now() }]);
+        setIsTyping(true);
+        setScanStatus({ text: 'Scanning...', color: '#f59e0b' });
+        
+        try {
+          const formData = new FormData();
+          formData.append('prompt', text);
+          formData.append('history', JSON.stringify([]));
+          
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}/api/secure-chat`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!res.ok) throw new Error('Backend error');
+          
+          const data = await res.json();
+          setIsTyping(false);
+
+          if (data.status === 'blocked') {
+            setScanStatus({ text: 'Threat Blocked', color: '#ef4444' });
+            setMessages(prev => [...prev, {
+              role: 'blocked',
+              level: data.risk_score > 85 ? 'critical' : 'high',
+              description: data.message,
+              score: data.risk_score,
+              threats: data.threats_found || [],
+              time: now(),
+            }]);
+          } else {
+            setScanStatus({ text: 'Safe — Executed with Gemini', color: '#3b82f6' });
+            setMessages(prev => [...prev, { role: 'ai', content: data.reply, score: data.risk_score, time: now() }]);
+          }
+          setTimeout(() => setScanStatus({ text: 'Shields Active', color: '#22c55e' }), 3000);
+        } catch (err) {
+          setIsTyping(false);
+          setScanStatus({ text: 'Backend Offline', color: '#ef4444' });
+        }
+      };
+
+      sendInitial(initialText);
+      // Clear location state so it doesn't resend on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -110,7 +166,7 @@ export default function SecureChat() {
         console.log(pair[0]+ ': ' + pair[1]);
       }
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/secure-chat`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}/api/secure-chat`, {
         method: 'POST',
         body: formData,
       });

@@ -18,7 +18,7 @@ export default function ThreatDetection() {
     setResult(null);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/analyze`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
@@ -98,7 +98,7 @@ export default function ThreatDetection() {
                   className="payload-textarea"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  style={{ width: '100%', border: 'none', background: 'transparent', color: '#fff', outline: 'none', resize: 'none' }}
+                  style={{ width: '100%', border: 'none', background: 'transparent', color: 'var(--text-main)', outline: 'none', resize: 'none' }}
                 />
               </div>
               <div className="button-group">
@@ -114,9 +114,9 @@ export default function ThreatDetection() {
             <div className="overview-section">
               <h3>Threat Overview</h3>
               <div className="gauge-container">
-                <svg viewBox="0 0 200 120" className="gauge-svg">
-                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="12" strokeLinecap="round" />
-                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" strokeWidth="12" strokeLinecap="round" strokeDasharray={gaugeCircumference} strokeDashoffset={gaugeOffset} style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)' }}/>
+                  <svg viewBox="0 0 200 120" className="gauge-svg">
+                      <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--border-color)" strokeWidth="12" strokeLinecap="round" />
+                      <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" strokeWidth="12" strokeLinecap="round" strokeDasharray={gaugeCircumference} strokeDashoffset={gaugeOffset} style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)' }}/>
                     <defs>
                       <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                           <stop offset="0%" stopColor="var(--green)" />
@@ -132,10 +132,10 @@ export default function ThreatDetection() {
                 </div>
                 <div className="gauge-center">
                     <span className="g-label">Risk Score</span>
-                    <div className="g-value">
-                       {riskScore} 
-                       <span className={isSafe ? 'text-green' : 'text-red'} style={{fontSize:'0.8rem'}}>
-                          {result?.threat_level?.toUpperCase() || 'N/A'}
+                    <div className="g-value" style={{ flexDirection: 'column', gap: '2px' }}>
+                       <span style={{ lineHeight: 1 }}>{riskScore}</span>
+                       <span className={isSafe ? 'text-green' : 'text-red'} style={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>
+                          {result?.threat_level?.toUpperCase() || 'NONE'}
                        </span>
                     </div>
                 </div>

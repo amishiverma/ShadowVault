@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import AntigravityCursor from './components/AntigravityCursor';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import ThreatDetection from './pages/ThreatDetection';
@@ -13,6 +15,7 @@ import './index.css';
 export default function App() {
   return (
     <Router>
+      <AntigravityCursor />
       <Routes>
         {/* Public Login Route */}
         <Route path="/login" element={<Login />} />
@@ -69,7 +72,7 @@ export default function App() {
           }
         />
         <Route
-          path="/chat"
+          path="/secure-chat"
           element={
             <ProtectedRoute>
               <MainLayout>

@@ -1,3 +1,10 @@
+import os
+from dotenv import load_dotenv
+
+# Load environment variables first!
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
+
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -9,8 +16,6 @@ import io
 import pypdf
 from functools import lru_cache
 from typing import List, Optional
-import os
-from dotenv import load_dotenv
 import google.generativeai as genai
 from datetime import datetime, timedelta
 
@@ -18,9 +23,6 @@ from datetime import datetime, timedelta
 from auth import create_access_token, verify_google_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
 from models import User, get_db, SessionLocal
 from sqlalchemy.orm import Session
-
-env_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(env_path)
 
 # Configure Gemini
 gemini_key = os.getenv("GEMINI_API_KEY")
@@ -473,7 +475,7 @@ async def secure_chat(
         }
     
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         
         # Reconstruct Gemini context history
         if parsed_history:
