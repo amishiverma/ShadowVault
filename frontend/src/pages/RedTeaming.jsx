@@ -24,7 +24,7 @@ export default function RedTeaming() {
           <p className="text-dim" style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
              Select a payload dataset to simulate attacks on your connected models to evaluate security robustness.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
              <button className="btn btn-primary">Run Jailbreak Datasets</button>
              
              <input 
