@@ -44,12 +44,13 @@ export default function Dashboard() {
       </div>
 
       <h1 style={{ 
-        fontSize: '3.6rem', 
+        fontSize: 'clamp(2rem, 8vw, 3.6rem)', 
         fontWeight: '500', 
-        marginBottom: '45px', 
+        marginBottom: '40px', 
         letterSpacing: '-0.02em',
         color: isLight ? '#1a1a1a' : '#ffffff',
-        fontFamily: "'Outfit', sans-serif"
+        fontFamily: "'Outfit', sans-serif",
+        padding: '0 10px'
       }}>
         How can I help you today?
       </h1>
