@@ -8,6 +8,7 @@ import PayloadAnalytics from './pages/PayloadAnalytics';
 import DefensePolicies from './pages/DefensePolicies';
 import RedTeaming from './pages/RedTeaming';
 import SecureChat from './pages/SecureChat';
+import BiasAuditor from './pages/BiasAuditor';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
@@ -77,6 +78,16 @@ export default function App() {
             <ProtectedRoute>
               <MainLayout>
                 <SecureChat />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bias"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <BiasAuditor />
               </MainLayout>
             </ProtectedRoute>
           }

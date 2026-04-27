@@ -3,7 +3,7 @@ uvicorn[standard]>=0.30.0
 pydantic>=2.7.0
 openai>=1.0.0
 python-dotenv
-google-generativeai
+google-genai
 google-auth>=2.25.0
 google-auth-oauthlib>=1.2.0
 google-auth-httplib2>=0.2.0
@@ -13,3 +13,7 @@ python-multipart
 pypdf
 sqlalchemy>=2.0.0
 PyJWT
+fairlearn
+pandas
+numpy
+scikit-learn

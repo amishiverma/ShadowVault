@@ -16,7 +16,7 @@ import io
 import pypdf
 from functools import lru_cache
 from typing import List, Optional
-import google.generativeai as genai
+from google import genai
 from datetime import datetime, timedelta
 
 # Import auth functions and models
@@ -24,10 +24,15 @@ from auth import create_access_token, verify_google_token, get_current_user, ACC
 from models import User, get_db, SessionLocal
 from sqlalchemy.orm import Session
 
-# Configure Gemini
+# Import bias auditing tools
+from bias_auditor import analyze_dataset_bias, suggest_mitigation
+import pandas as pd
+
+# Configure Gemini Client
 gemini_key = os.getenv("GEMINI_API_KEY")
+gemini_client = None
 if gemini_key:
-    genai.configure(api_key=gemini_key)
+    gemini_client = genai.Client(api_key=gemini_key)
 
 app = FastAPI(title="ShadowVault API", description="Backend for Prompt Injection Defense")
 
@@ -475,18 +480,22 @@ async def secure_chat(
         }
     
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        
         # Reconstruct Gemini context history
+        contents = []
         if parsed_history:
-            gemini_history = []
             for msg in parsed_history:
                 role = "model" if msg.get("role") in ["ai", "assistant", "model"] else "user"
-                gemini_history.append({"role": role, "parts": [msg.get("content", "")]})
-            chat = model.start_chat(history=gemini_history)
-            response = chat.send_message(final_prompt)
-        else:
-            response = model.generate_content(final_prompt)
+                contents.append({"role": role, "parts": [{"text": msg.get("content", "")}]})
+        
+        contents.append({"role": "user", "parts": [{"text": final_prompt}]})
+        
+        if not gemini_client:
+            raise Exception("Gemini client not initialized. Check API Key.")
+            
+        response = gemini_client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=contents
+        )
             
         ai_reply = response.text
         
@@ -625,3 +634,111 @@ def logout():
     This endpoint doesn't need to do anything special since JWT is stateless.
     """
     return {"status": "success", "message": "Logged out successfully"}
+
+
+# ===== Bias & Fairness Auditing Endpoints =====
+
+@app.post("/api/audit/dataset")
+async def audit_dataset(
+    target_column: str = Form(...),
+    protected_attributes: str = Form(...), # JSON string of list
+    file: UploadFile = File(...)
+):
+    try:
+        attrs = json.loads(protected_attributes)
+    except Exception:
+        attrs = []
+
+    file_content = await file.read()
+    try:
+        if file.filename.endswith(".csv"):
+            df = pd.read_csv(io.BytesIO(file_content))
+        elif file.filename.endswith(".json"):
+            df = pd.read_json(io.BytesIO(file_content))
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format. Please upload CSV or JSON.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
+
+    analysis = analyze_dataset_bias(df, target_column, attrs)
+    mitigations = suggest_mitigation(analysis)
+    
+    return {
+        "status": "success",
+        "analysis": analysis,
+        "mitigations": mitigations
+    }
+
+@app.post("/api/audit/explain")
+async def explain_audit(data: dict):
+    """
+    Uses Gemini to provide a natural language explanation of the bias audit results.
+    """
+    if not gemini_key:
+        return {"explanation": "Gemini API not configured for detailed explanations."}
+        
+    prompt = f"""
+    As an AI Ethics Auditor, explain these bias detection results to a non-technical stakeholder.
+    Highlight the most critical risks and explain why they are harmful.
+    
+    Audit Results:
+    {json.dumps(data, indent=2)}
+    
+    Format your response with clear headings, bullet points, and a 'Fix Action Plan'.
+    Keep the tone professional, urgent but constructive.
+    """
+    
+    try:
+        if not gemini_client:
+             return {"explanation": "Gemini Client not initialized."}
+             
+        response = gemini_client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
+        return {"explanation": response.text}
+    except Exception as e:
+        return {"explanation": f"Error generating explanation: {str(e)}"}
+
+
+@app.post("/api/audit/text")
+async def audit_text(data: dict):
+    """
+    Audits a single piece of text (e.g. an AI response) for discriminatory patterns.
+    """
+    text = data.get("text", "")
+    if not text:
+        return {"status": "error", "message": "No text provided"}
+
+    prompt = f"""
+    As an AI Ethics Auditor, analyze the following text for any signs of hidden unfairness, 
+    discrimination, or harmful bias. 
+    
+    Text to audit:
+    "{text}"
+    
+    Return a JSON object with:
+    1. "is_biased": boolean
+    2. "bias_type": string (e.g. "gender", "race", "none")
+    3. "severity": "none", "low", "medium", "high"
+    4. "explanation": a short summary of your findings.
+    
+    Return ONLY the JSON.
+    """
+    
+    try:
+        if not gemini_client:
+             return {"status": "error", "message": "Gemini Client not initialized."}
+             
+        response = gemini_client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt,
+            config={"response_mime_type": "application/json"}
+        )
+        
+        return {
+            "status": "success",
+            "audit": json.loads(response.text)
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

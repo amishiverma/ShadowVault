@@ -18,6 +18,7 @@ export default function MainLayout({ children }) {
   const navLinks = [
     { name: 'dashboard', path: '/' },
     { name: 'threat detection', path: '/detect' },
+    { name: 'bias auditor', path: '/bias' },
     { name: 'payload analytics', path: '/analytics' },
     { name: 'defense policies', path: '/policies' },
     { name: 'red teaming', path: '/redteam' },
