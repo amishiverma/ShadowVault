@@ -493,7 +493,7 @@ async def secure_chat(
             raise Exception("Gemini client not initialized. Check API Key.")
             
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=contents
         )
             
@@ -693,7 +693,7 @@ async def explain_audit(data: dict):
              return {"explanation": "Gemini Client not initialized."}
              
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt
         )
         return {"explanation": response.text}
@@ -731,7 +731,7 @@ async def audit_text(data: dict):
              return {"status": "error", "message": "Gemini Client not initialized."}
              
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt,
             config={"response_mime_type": "application/json"}
         )

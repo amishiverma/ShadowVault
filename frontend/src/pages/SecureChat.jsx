@@ -1,7 +1,152 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-// ─── Typing indicator ────────────────────────────────────────────────────────
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+
+// ─── Bias Audit Badge ─────────────────────────────────────────────────────────
+function BiasAuditBadge({ text }) {
+  const [status, setStatus] = useState('idle'); // idle | loading | done | error
+  const [result, setResult] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+
+  const runAudit = async () => {
+    if (status === 'loading') return;
+    setStatus('loading');
+    setExpanded(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`${API_URL}/api/audit/text`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setResult(data.audit);
+        setStatus('done');
+      } else {
+        setStatus('error');
+      }
+    } catch {
+      setStatus('error');
+    }
+  };
+
+  const severityColor = {
+    none: '#22c55e',
+    low: '#84cc16',
+    medium: '#f59e0b',
+    high: '#ef4444',
+  };
+
+  return (
+    <div style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
+      {status === 'idle' && (
+        <button
+          onClick={runAudit}
+          title="Check this reply for bias using AI Ethics Auditor"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '5px 12px',
+            borderRadius: '20px',
+            border: '1px solid rgba(110,60,188,0.4)',
+            background: 'rgba(110,60,188,0.1)',
+            color: '#a78bfa',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            letterSpacing: '0.02em',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseOver={e => e.currentTarget.style.background = 'rgba(110,60,188,0.25)'}
+          onMouseOut={e => e.currentTarget.style.background = 'rgba(110,60,188,0.1)'}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+          </svg>
+          Audit Reply for Bias
+        </button>
+      )}
+
+      {status === 'loading' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', opacity: 0.6 }}>
+          <span style={{
+            display: 'inline-block', width: '12px', height: '12px',
+            border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#a78bfa',
+            borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+          }} />
+          Running bias audit...
+        </div>
+      )}
+
+      {status === 'error' && (
+        <p style={{ fontSize: '0.78rem', color: '#f87171', margin: 0 }}>⚠️ Audit failed — check backend connection.</p>
+      )}
+
+      {status === 'done' && result && (
+        <div
+          style={{
+            marginTop: '8px',
+            padding: '12px 14px',
+            borderRadius: '12px',
+            background: result.is_biased ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)',
+            border: `1px solid ${result.is_biased ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`,
+            fontSize: '0.82rem',
+            animation: 'fadeIn 0.4s ease',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: '700', color: result.is_biased ? '#f87171' : '#4ade80' }}>
+              {result.is_biased ? '⚠️ Bias Detected' : '✅ No Bias Detected'}
+            </span>
+            {result.bias_type && result.bias_type !== 'none' && (
+              <span style={{
+                padding: '2px 10px',
+                borderRadius: '20px',
+                background: 'rgba(167,139,250,0.15)',
+                color: '#c4b5fd',
+                fontSize: '0.72rem',
+                fontWeight: '600',
+                textTransform: 'capitalize',
+              }}>
+                {result.bias_type}
+              </span>
+            )}
+            {result.severity && result.severity !== 'none' && (
+              <span style={{
+                padding: '2px 10px',
+                borderRadius: '20px',
+                background: `${severityColor[result.severity]}22`,
+                color: severityColor[result.severity] || '#fff',
+                fontSize: '0.72rem',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+              }}>
+                {result.severity}
+              </span>
+            )}
+          </div>
+          {result.explanation && (
+            <p style={{ margin: 0, opacity: 0.8, lineHeight: '1.5' }}>{result.explanation}</p>
+          )}
+          <button
+            onClick={() => { setStatus('idle'); setResult(null); setExpanded(false); }}
+            style={{ marginTop: '8px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem', cursor: 'pointer', padding: 0 }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Typing indicator ─────────────────────────────────────────────────────────
 function TypingDots() {
   return (
     <div className="sc-msg sc-msg--ai">
@@ -15,7 +160,7 @@ function TypingDots() {
   );
 }
 
-// ─── Message bubble ──────────────────────────────────────────────────────────
+// ─── Message bubble ───────────────────────────────────────────────────────────
 function Message({ msg }) {
   const isUser = msg.role === 'user';
 
@@ -48,6 +193,10 @@ function Message({ msg }) {
             🛡️ Safety Rating: {msg.score}/100 (Safe)
           </div>
         )}
+        {/* ── Bias Audit Badge — only for AI replies ── */}
+        {!isUser && msg.content && (
+          <BiasAuditBadge text={msg.content} />
+        )}
         <div className="sc-timestamp">{msg.time}</div>
       </div>
       {isUser && <div className="sc-avatar sc-avatar--user">U</div>}
@@ -55,7 +204,7 @@ function Message({ msg }) {
   );
 }
 
-// ─── Main page ───────────────────────────────────────────────────────────────
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function SecureChat() {
   const location = useLocation();
   const [input, setInput] = useState('');
@@ -79,27 +228,24 @@ export default function SecureChat() {
   // Handle initial message from Dashboard
   useEffect(() => {
     if (location.state?.initialMessage) {
-      // Small delay to ensure component is ready
       const initialText = location.state.initialMessage;
-      // We need to trigger handleSend but with the initialText
-      // Since handleSend depends on 'input', we should probably refactor or use a side effect
       const sendInitial = async (text) => {
         setMessages(prev => [...prev, { role: 'user', content: text, time: now() }]);
         setIsTyping(true);
         setScanStatus({ text: 'Scanning...', color: '#f59e0b' });
-        
+
         try {
           const formData = new FormData();
           formData.append('prompt', text);
           formData.append('history', JSON.stringify([]));
-          
-          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}/api/secure-chat`, {
+
+          const res = await fetch(`${API_URL}/api/secure-chat`, {
             method: 'POST',
             body: formData,
           });
 
           if (!res.ok) throw new Error('Backend error');
-          
+
           const data = await res.json();
           setIsTyping(false);
 
@@ -125,7 +271,6 @@ export default function SecureChat() {
       };
 
       sendInitial(initialText);
-      // Clear location state so it doesn't resend on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -154,19 +299,11 @@ export default function SecureChat() {
         .filter(m => m.role === 'user' || m.role === 'ai')
         .map(m => ({ role: m.role, content: m.content }));
 
-      // Use FormData for FastAPI endpoint expecting form fields
       const formData = new FormData();
       formData.append('prompt', text || '');
       formData.append('history', JSON.stringify(history || []));
-      // File upload not implemented here, but can be added as: formData.append('file', file)
 
-
-      // Debug: log FormData content
-      for (let pair of formData.entries()) {
-        console.log(pair[0]+ ': ' + pair[1]);
-      }
-
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}/api/secure-chat`, {
+      const res = await fetch(`${API_URL}/api/secure-chat`, {
         method: 'POST',
         body: formData,
       });
@@ -254,12 +391,8 @@ export default function SecureChat() {
 
       {/* ── Premium Input Area ── */}
       <div className="sc-input-area">
-
-        {/* Glowing gradient border wrapper */}
         <div className={`sc-input-glow-wrap ${inputFocused ? 'focused' : ''}`}>
           <div className="sc-input-inner">
-
-            {/* Top: textarea */}
             <textarea
               ref={textareaRef}
               className="sc-glow-input"
@@ -271,36 +404,29 @@ export default function SecureChat() {
               onBlur={() => setInputFocused(false)}
               placeholder="Ask anything — ShadowVault will protect you..."
             />
-
-            {/* Bottom toolbar row */}
             <div className="sc-toolbar">
               <div className="sc-toolbar-left">
-                {/* + button */}
                 <button className="sc-tool-btn" title="Attach">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
                     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
                 </button>
-                {/* Tools chip */}
                 <button className="sc-tools-chip">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                   </svg>
                   Tools
                 </button>
               </div>
-
               <div className="sc-toolbar-right">
-                {/* Mic button */}
                 <button className="sc-mic-btn" title="Voice input">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                    <line x1="12" y1="19" x2="12" y2="23"/>
-                    <line x1="8" y1="23" x2="16" y2="23"/>
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
                   </svg>
                 </button>
-                {/* Send button - purple circle */}
                 <button
                   className="sc-glow-send"
                   onClick={handleSend}
@@ -308,19 +434,23 @@ export default function SecureChat() {
                   title="Send"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
-                    <line x1="22" y1="2" x2="11" y2="13"/>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
                 </button>
               </div>
             </div>
           </div>
         </div>
-
         <p className="sc-footer-note">
           All prompts scanned by NVIDIA Nemotron Safety Guard + Regex engine before reaching AI
         </p>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+      `}</style>
     </div>
   );
 }
