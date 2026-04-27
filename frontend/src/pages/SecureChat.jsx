@@ -7,12 +7,10 @@ const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 function BiasAuditBadge({ text }) {
   const [status, setStatus] = useState('idle'); // idle | loading | done | error
   const [result, setResult] = useState(null);
-  const [expanded, setExpanded] = useState(false);
 
   const runAudit = async () => {
     if (status === 'loading') return;
     setStatus('loading');
-    setExpanded(true);
     try {
       const token = localStorage.getItem('authToken');
       const res = await fetch(`${API_URL}/api/audit/text`, {
@@ -135,7 +133,7 @@ function BiasAuditBadge({ text }) {
             <p style={{ margin: 0, opacity: 0.8, lineHeight: '1.5' }}>{result.explanation}</p>
           )}
           <button
-            onClick={() => { setStatus('idle'); setResult(null); setExpanded(false); }}
+            onClick={() => { setStatus('idle'); setResult(null); }}
             style={{ marginTop: '8px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem', cursor: 'pointer', padding: 0 }}
           >
             Dismiss
@@ -264,7 +262,7 @@ export default function SecureChat() {
             setMessages(prev => [...prev, { role: 'ai', content: data.reply, score: data.risk_score, time: now() }]);
           }
           setTimeout(() => setScanStatus({ text: 'Shields Active', color: '#22c55e' }), 3000);
-        } catch (err) {
+        } catch {
           setIsTyping(false);
           setScanStatus({ text: 'Backend Offline', color: '#ef4444' });
         }
@@ -342,7 +340,7 @@ export default function SecureChat() {
       setMessages(prev => [...prev, { role: 'ai', content: data.reply, score: data.risk_score, time: now() }]);
       setTimeout(() => setScanStatus({ text: 'Shields Active', color: '#22c55e' }), 3000);
 
-    } catch (err) {
+    } catch {
       setIsTyping(false);
       setScanStatus({ text: 'Backend Offline', color: '#ef4444' });
       setMessages(prev => [...prev, {

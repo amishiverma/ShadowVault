@@ -6,22 +6,30 @@ def run_project():
     print("Stopping current processes on ports 8000 and 5173...")
     # Port 8000
     try:
-        pid8000 = subprocess.check_output('netstat -ano | findstr :8000', shell=True).decode().split()[-1]
-        subprocess.run(f'taskkill /F /PID {pid8000}', shell=True)
-        print(f"Killed process {pid8000} on port 8000")
+        output8000 = subprocess.check_output('netstat -ano | findstr :8000', shell=True).decode()
+        for line in output8000.strip().split('\n'):
+            if 'LISTENING' in line:
+                pid = line.strip().split()[-1]
+                if pid != '0':
+                    subprocess.run(f'taskkill /F /PID {pid}', shell=True)
+                    print(f"Killed process {pid} on port 8000")
     except:
         print("Port 8000 is already free")
         
     # Port 5173
     try:
-        pid5173 = subprocess.check_output('netstat -ano | findstr :5173', shell=True).decode().split()[-1]
-        subprocess.run(f'taskkill /F /PID {pid5173}', shell=True)
-        print(f"Killed process {pid5173} on port 5173")
+        output5173 = subprocess.check_output('netstat -ano | findstr :5173', shell=True).decode()
+        for line in output5173.strip().split('\n'):
+            if 'LISTENING' in line:
+                pid = line.strip().split()[-1]
+                if pid != '0':
+                    subprocess.run(f'taskkill /F /PID {pid}', shell=True)
+                    print(f"Killed process {pid} on port 5173")
     except:
         print("Port 5173 is already free")
 
     # Start Backend
-    backend_path = r"d:\ShadowVault\backend"
+    backend_path = os.path.join(os.getcwd(), "backend")
     print(f"Starting backend from {backend_path}...")
     backend_process = subprocess.Popen(
         [r"venv\Scripts\python.exe", "-m", "uvicorn", "main:app", "--reload", "--port", "8000"],
@@ -32,7 +40,7 @@ def run_project():
     )
     
     # Start Frontend
-    frontend_path = r"d:\ShadowVault\frontend"
+    frontend_path = os.path.join(os.getcwd(), "frontend")
     print(f"Starting frontend from {frontend_path}...")
     frontend_process = subprocess.Popen(
         ["npm", "run", "dev", "--", "--port", "5173"],

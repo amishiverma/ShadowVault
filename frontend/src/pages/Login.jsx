@@ -1,14 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import './Login.css';
 
 export default function Login() {
   const navigate = useNavigate();
   const { demoLogin } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
 
   const handleDemoLogin = () => {
     setIsLoading(true);
@@ -50,11 +49,6 @@ export default function Login() {
             </button>
           </div>
 
-          {error && (
-            <div className="error-message">
-              <p>{error}</p>
-            </div>
-          )}
 
           {isLoading && (
             <div className="loading-spinner">

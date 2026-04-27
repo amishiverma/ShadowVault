@@ -30,6 +30,7 @@ import pandas as pd
 
 # Configure Gemini Client
 gemini_key = os.getenv("GEMINI_API_KEY")
+print(f"DEBUG: Gemini API Key loaded: {gemini_key[:8]}..." if gemini_key else "DEBUG: Gemini API Key NOT found")
 gemini_client = None
 if gemini_key:
     gemini_client = genai.Client(api_key=gemini_key)
@@ -493,7 +494,7 @@ async def secure_chat(
             raise Exception("Gemini client not initialized. Check API Key.")
             
         response = gemini_client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3-flash-preview",
             contents=contents
         )
             
@@ -693,7 +694,7 @@ async def explain_audit(data: dict):
              return {"explanation": "Gemini Client not initialized."}
              
         response = gemini_client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3-flash-preview",
             contents=prompt
         )
         return {"explanation": response.text}
@@ -731,7 +732,7 @@ async def audit_text(data: dict):
              return {"status": "error", "message": "Gemini Client not initialized."}
              
         response = gemini_client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3-flash-preview",
             contents=prompt,
             config={"response_mime_type": "application/json"}
         )

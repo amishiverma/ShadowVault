@@ -1,5 +1,41 @@
 import { useEffect, useRef } from 'react';
 
+class Particle {
+  constructor(canvas, mouse) {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.size = Math.random() * 2 + 0.5;
+    this.speedX = Math.random() * 0.8 - 0.4;
+    this.speedY = Math.random() * 0.8 - 0.4;
+    this.opacity = Math.random() * 0.5 + 0.1;
+    this.canvas = canvas;
+    this.mouse = mouse;
+  }
+
+  update() {
+    const dx = this.mouse.x - this.x;
+    const dy = this.mouse.y - this.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance < this.mouse.radius) {
+      const forceDirectionX = dx / distance;
+      const forceDirectionY = dy / distance;
+      const force = (this.mouse.radius - distance) / this.mouse.radius;
+      const directionX = forceDirectionX * force * 4;
+      const directionY = forceDirectionY * force * 4;
+
+      this.x -= directionX;
+      this.y -= directionY;
+    }
+
+    this.x += this.speedX;
+    this.y += this.speedY;
+
+    if (this.x < 0 || this.x > this.canvas.width) this.speedX *= -1;
+    if (this.y < 0 || this.y > this.canvas.height) this.speedY *= -1;
+  }
+}
+
 export default function AntigravityCursor() {
   const canvasRef = useRef(null);
 
@@ -23,42 +59,8 @@ export default function AntigravityCursor() {
       mouse.y = e.y;
     });
 
-    class Particle {
-      constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2 + 0.5;
-        this.speedX = Math.random() * 0.8 - 0.4;
-        this.speedY = Math.random() * 0.8 - 0.4;
-        this.opacity = Math.random() * 0.5 + 0.1;
-      }
-
-      update() {
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < mouse.radius) {
-          const forceDirectionX = dx / distance;
-          const forceDirectionY = dy / distance;
-          const force = (mouse.radius - distance) / mouse.radius;
-          const directionX = forceDirectionX * force * 4;
-          const directionY = forceDirectionY * force * 4;
-
-          this.x -= directionX;
-          this.y -= directionY;
-        }
-
-        this.x += this.speedX;
-        this.y += this.speedY;
-
-        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
-      }
-    }
-
     for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle());
+      particles.push(new Particle(canvas, mouse));
     }
 
     const animate = () => {

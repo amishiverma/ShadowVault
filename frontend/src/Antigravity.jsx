@@ -29,12 +29,15 @@ const AntigravityParticles = ({
         // distribute along a ring
         const angle = (i / count) * Math.PI * 2;
         // Apply particleVariance to randomize radius slightly
+        // eslint-disable-next-line react-hooks/purity
         const radius = ringRadius + (Math.random() - 0.5) * particleVariance * 2;
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
         // spread on the Z axis 
+        // eslint-disable-next-line react-hooks/purity
         const z = (Math.random() - 0.5) * depthFactor * 2;
 
+        // eslint-disable-next-line react-hooks/purity
         const size = particleSize * (0.5 + Math.random() * particleVariance * 0.5);
 
         p.push({
@@ -43,13 +46,14 @@ const AntigravityParticles = ({
             x, y, z,
             cx: x, cy: y, cz: z, // current physics
             size,
+            // eslint-disable-next-line react-hooks/purity
             phase: Math.random() * Math.PI * 2, // for individual wave offsets
         });
     }
     return p;
   }, [count, ringRadius, particleVariance, particleSize, depthFactor]);
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const time = state.clock.getElapsedTime();
     // Normalize mouse pointer coordinates relative to the canvas and scale by 10 for interactive distance
     const vec = new THREE.Vector3(state.pointer.x * 12, state.pointer.y * 12, 0);
