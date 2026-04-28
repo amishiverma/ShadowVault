@@ -14,8 +14,16 @@ def analyze_dataset_bias(df: pd.DataFrame, target_column: str, protected_attribu
         "flags": []
     }
 
+    # Normalize column names in dataframe
+    df.columns = df.columns.str.strip().str.lower()
+    
+    # Normalize inputs
+    target_column = target_column.strip().lower()
+    protected_attributes = [attr.strip().lower() for attr in protected_attributes]
+
     if target_column not in df.columns:
-        return {"error": f"Target column '{target_column}' not found in dataset."}
+        available_cols = ", ".join(df.columns)
+        return {"error": f"Target column '{target_column}' not found. Available columns: {available_cols}"}
 
     # Identify if target is categorical or numerical
     is_categorical = df[target_column].dtype == 'object' or df[target_column].nunique() < 10
@@ -25,9 +33,12 @@ def analyze_dataset_bias(df: pd.DataFrame, target_column: str, protected_attribu
     
     total_bias_score = 0
     
+    processed_attrs = 0
     for attr in protected_attributes:
         if attr not in df.columns:
             continue
+            
+        processed_attrs += 1
             
         attr_results = {
             "distribution": df[attr].value_counts().to_dict(),
@@ -83,6 +94,10 @@ def analyze_dataset_bias(df: pd.DataFrame, target_column: str, protected_attribu
                     total_bias_score += 40
 
         results["attributes"][attr] = attr_results
+
+    if processed_attrs == 0 and protected_attributes:
+        available_cols = ", ".join(df.columns)
+        return {"error": f"None of the protected attributes were found. Available columns: {available_cols}"}
 
     results["overall_score"] = min(total_bias_score, 100)
     results["status"] = "CRITICAL" if results["overall_score"] > 50 else "WARNING" if results["overall_score"] > 20 else "SAFE"

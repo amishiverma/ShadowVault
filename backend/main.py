@@ -1,4 +1,5 @@
 import os
+# Auto-reload trigger
 from dotenv import load_dotenv
 
 # Load environment variables first!
@@ -297,7 +298,7 @@ def _cached_ai_safety_analysis(messages_tuple: tuple) -> dict:
         }
 
 
-def ai_safety_analysis(prompt: str, history: list = None) -> dict:
+def ai_safety_analysis(prompt: str, history: list = None, role: str = "user") -> dict:
     """
     Public wrapper that builds message history and calls the cached safety guard.
     """
@@ -307,17 +308,17 @@ def ai_safety_analysis(prompt: str, history: list = None) -> dict:
     formatted_messages = []
     # Build conversation context
     for msg in history:
-        role = "assistant" if msg["role"] in ["ai", "model", "assistant"] else "user"
-        formatted_messages.append({"role": role, "content": msg["content"]})
+        msg_role = "assistant" if msg["role"] in ["ai", "model", "assistant"] else "user"
+        formatted_messages.append({"role": msg_role, "content": msg["content"]})
         
-    formatted_messages.append({"role": "user", "content": prompt})
+    formatted_messages.append({"role": role, "content": prompt})
     
     # Convert list of dicts to tuple of tuples so it's hashable for @lru_cache
     messages_tuple = tuple(tuple(m.items()) for m in formatted_messages)
     return _cached_ai_safety_analysis(messages_tuple)
 
 
-def combine_analysis(prompt: str, history: list = None) -> dict:
+def combine_analysis(prompt: str, history: list = None, role: str = "user") -> dict:
     """
     Combine regex-based detection with AI safety model for comprehensive analysis.
     The regex engine catches known attack patterns instantly,
@@ -327,7 +328,7 @@ def combine_analysis(prompt: str, history: list = None) -> dict:
     regex_result = regex_analysis(prompt)
 
     # Layer 2: AI-powered safety classification
-    ai_result = ai_safety_analysis(prompt, history)
+    ai_result = ai_safety_analysis(prompt, history, role)
 
     # Merge results
     threats_found = list(regex_result["threats_found"])
@@ -336,7 +337,7 @@ def combine_analysis(prompt: str, history: list = None) -> dict:
 
     # If AI model flagged it as unsafe, boost the risk score
     if ai_result["success"] and ai_result["is_unsafe"]:
-        base_ai_severity = 45
+        base_ai_severity = 35
 
         # Penalize drastically based on the distinct number of offensive categories triggered
         category_penalty = len(ai_result["categories"]) * 12
@@ -375,7 +376,7 @@ def combine_analysis(prompt: str, history: list = None) -> dict:
             obfuscation_risk = int(special_char_ratio * 30)
             total_risk = min(int(total_risk + obfuscation_risk), 100)
 
-    is_safe = len(threats_found) == 0 and not (ai_result["success"] and ai_result["is_unsafe"])
+    is_safe = total_risk < 60
     
     # Determine precise threat level breakpoints
     if total_risk <= 5:
@@ -469,7 +470,7 @@ async def secure_chat(
     analysis = combine_analysis(final_prompt, history_dicts)
     risk_score = analysis["risk_score"]
     
-    if risk_score > 30:
+    if risk_score >= 60:
         return {
             "status": "blocked",
             "is_safe": False,
@@ -494,15 +495,15 @@ async def secure_chat(
             raise Exception("Gemini client not initialized. Check API Key.")
             
         response = gemini_client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-flash-latest",
             contents=contents
         )
             
         ai_reply = response.text
         
         # --- Output Validation Layer ---
-        output_analysis = combine_analysis(ai_reply, [])
-        if output_analysis["risk_score"] > 30:
+        output_analysis = combine_analysis(ai_reply, [], role="assistant")
+        if output_analysis["risk_score"] >= 60:
             return {
                 "status": "blocked",
                 "is_safe": False,
@@ -514,7 +515,11 @@ async def secure_chat(
             }
             
     except Exception as e:
-        ai_reply = f"[Gemini API Error]: {str(e)}"
+        error_str = str(e)
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+            ai_reply = "⚠️ **API Limit Reached:** The Gemini API quota has been exhausted. Switched to `gemini-flash-latest` model which has higher limits, but if you still see this, please wait a minute or upgrade your API key."
+        else:
+            ai_reply = f"[Gemini API Error]: {error_str}"
 
     return {
         "status": "success",
@@ -689,17 +694,27 @@ async def explain_audit(data: dict):
     Keep the tone professional, urgent but constructive.
     """
     
-    try:
-        if not gemini_client:
-             return {"explanation": "Gemini Client not initialized."}
-             
-        response = gemini_client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=prompt
-        )
-        return {"explanation": response.text}
-    except Exception as e:
-        return {"explanation": f"Error generating explanation: {str(e)}"}
+    import asyncio
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            if not gemini_client:
+                 return {"explanation": "Gemini Client not initialized."}
+                 
+            response = gemini_client.models.generate_content(
+                model="gemini-flash-latest",
+                contents=prompt
+            )
+            return {"explanation": response.text}
+        except Exception as e:
+            error_str = str(e)
+            if "503" in error_str and attempt < max_retries - 1:
+                await asyncio.sleep(2 * (attempt + 1))  # Exponential backoff
+                continue
+            
+            # If all retries fail or it's a different error
+            friendly_msg = "The AI service is currently experiencing high demand. Please try again later." if "503" in error_str else error_str
+            return {"explanation": f"⚠️ Audit Explanation Unavailable: {friendly_msg}"}
 
 
 @app.post("/api/audit/text")
@@ -712,34 +727,49 @@ async def audit_text(data: dict):
         return {"status": "error", "message": "No text provided"}
 
     prompt = f"""
-    As an AI Ethics Auditor, analyze the following text for any signs of hidden unfairness, 
-    discrimination, or harmful bias. 
+    As a strict AI Ethics Auditor, deeply analyze the following text for ANY signs of bias, including:
+    - Explicit discrimination
+    - Implicit bias, microaggressions, or stereotyping
+    - Unfair assumptions about gender, race, age, emotional state, or background
+    - Coded language or dog-whistles
+    - Advice or frameworks that inherently validate or rely on a biased premise (e.g., addressing 'emotional' behavior in a professional setting which often targets specific genders).
+    
+    Even if the text appears to be giving advice or is presented neutrally, if it addresses or reinforces a biased stereotype, you MUST flag it as biased. Do not be lenient.
     
     Text to audit:
     "{text}"
     
     Return a JSON object with:
     1. "is_biased": boolean
-    2. "bias_type": string (e.g. "gender", "race", "none")
-    3. "severity": "none", "low", "medium", "high"
-    4. "explanation": a short summary of your findings.
+    2. "bias_type": string (e.g. "gender", "race", "implicit", "none")
+    3. "severity": "none", "low", "medium", "high", "critical"
+    4. "explanation": a detailed explanation of the bias found, specifically highlighting the problematic assumptions or coded language. If no bias, explain why.
     
     Return ONLY the JSON.
     """
     
-    try:
-        if not gemini_client:
-             return {"status": "error", "message": "Gemini Client not initialized."}
-             
-        response = gemini_client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=prompt,
-            config={"response_mime_type": "application/json"}
-        )
-        
-        return {
-            "status": "success",
-            "audit": json.loads(response.text)
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    import asyncio
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            if not gemini_client:
+                 return {"status": "error", "message": "Gemini Client not initialized."}
+                 
+            response = gemini_client.models.generate_content(
+                model="gemini-flash-latest",
+                contents=prompt,
+                config={"response_mime_type": "application/json"}
+            )
+            
+            return {
+                "status": "success",
+                "audit": json.loads(response.text)
+            }
+        except Exception as e:
+            error_str = str(e)
+            if "503" in error_str and attempt < max_retries - 1:
+                await asyncio.sleep(2 * (attempt + 1))
+                continue
+            
+            friendly_msg = "The AI service is currently experiencing high demand. Please try again later." if "503" in error_str else error_str
+            return {"status": "error", "message": f"Audit Unavailable: {friendly_msg}"}
