@@ -17,7 +17,7 @@ function BiasAuditBadge({ text }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ text }),
       });
@@ -38,52 +38,55 @@ function BiasAuditBadge({ text }) {
     low: '#84cc16',
     medium: '#f59e0b',
     high: '#ef4444',
+    critical: '#b91c1c',
   };
 
   return (
     <div style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
+      
       {status === 'idle' && (
         <button
           onClick={runAudit}
-          title="Check this reply for bias using AI Ethics Auditor"
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '5px 12px',
+            background: 'rgba(167,139,250,0.15)',
+            border: '1px solid rgba(167,139,250,0.3)',
             borderRadius: '20px',
-            border: '1px solid rgba(110,60,188,0.4)',
-            background: 'rgba(110,60,188,0.1)',
-            color: '#a78bfa',
+            color: '#c4b5fd',
             fontSize: '0.75rem',
             fontWeight: '600',
+            padding: '4px 12px',
             cursor: 'pointer',
-            letterSpacing: '0.02em',
-            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
           }}
-          onMouseOver={e => e.currentTarget.style.background = 'rgba(110,60,188,0.25)'}
-          onMouseOut={e => e.currentTarget.style.background = 'rgba(110,60,188,0.1)'}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-          </svg>
-          Audit Reply for Bias
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          Audit for Bias
         </button>
       )}
 
       {status === 'loading' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', opacity: 0.6 }}>
-          <span style={{
-            display: 'inline-block', width: '12px', height: '12px',
-            border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#a78bfa',
-            borderRadius: '50%', animation: 'spin 0.8s linear infinite',
-          }} />
+          <span
+            style={{
+              display: 'inline-block',
+              width: '12px',
+              height: '12px',
+              border: '2px solid rgba(255,255,255,0.2)',
+              borderTopColor: '#a78bfa',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }}
+          />
           Running bias audit...
         </div>
       )}
 
       {status === 'error' && (
-        <p style={{ fontSize: '0.78rem', color: '#f87171', margin: 0 }}>⚠️ Audit failed — check backend connection.</p>
+        <p style={{ fontSize: '0.78rem', color: '#f87171', margin: 0 }}>
+          ⚠️ Audit failed — check backend connection.
+        </p>
       )}
 
       {status === 'done' && result && (
@@ -103,38 +106,53 @@ function BiasAuditBadge({ text }) {
               {result.is_biased ? '⚠️ Bias Detected' : '✅ No Bias Detected'}
             </span>
             {result.bias_type && result.bias_type !== 'none' && (
-              <span style={{
-                padding: '2px 10px',
-                borderRadius: '20px',
-                background: 'rgba(167,139,250,0.15)',
-                color: '#c4b5fd',
-                fontSize: '0.72rem',
-                fontWeight: '600',
-                textTransform: 'capitalize',
-              }}>
+              <span
+                style={{
+                  padding: '2px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(167,139,250,0.15)',
+                  color: '#c4b5fd',
+                  fontSize: '0.72rem',
+                  fontWeight: '600',
+                  textTransform: 'capitalize',
+                }}
+              >
                 {result.bias_type}
               </span>
             )}
             {result.severity && result.severity !== 'none' && (
-              <span style={{
-                padding: '2px 10px',
-                borderRadius: '20px',
-                background: `${severityColor[result.severity]}22`,
-                color: severityColor[result.severity] || '#fff',
-                fontSize: '0.72rem',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-              }}>
+              <span
+                style={{
+                  padding: '2px 10px',
+                  borderRadius: '20px',
+                  background: `${severityColor[result.severity]}22`,
+                  color: severityColor[result.severity] || '#fff',
+                  fontSize: '0.72rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                }}
+              >
                 {result.severity}
               </span>
             )}
           </div>
           {result.explanation && (
-            <p style={{ margin: 0, opacity: 0.8, lineHeight: '1.5' }}>{result.explanation}</p>
+            <div style={{ margin: 0, opacity: 0.8, lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{result.explanation}</div>
           )}
           <button
-            onClick={() => { setStatus('idle'); setResult(null); }}
-            style={{ marginTop: '8px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem', cursor: 'pointer', padding: 0 }}
+            onClick={() => {
+              setStatus('idle');
+              setResult(null);
+            }}
+            style={{
+              marginTop: '8px',
+              background: 'none',
+              border: 'none',
+              color: 'rgba(255,255,255,0.4)',
+              fontSize: '0.72rem',
+              cursor: 'pointer',
+              padding: 0,
+            }}
           >
             Dismiss
           </button>
@@ -172,7 +190,9 @@ function Message({ msg }) {
         </div>
         <p className="sc-alert-body">{msg.description}</p>
         <div className="sc-alert-meta">
-          <span>Risk Score: <b style={{ color: '#f97316' }}>{msg.score}/100</b></span>
+          <span>
+            Risk Score: <b style={{ color: '#f97316' }}>{msg.score}/100</b>
+          </span>
           {msg.threats?.length > 0 && (
             <span>Vectors: <b>{msg.threats.join(', ')}</b></span>
           )}
@@ -186,15 +206,13 @@ function Message({ msg }) {
       {!isUser && <div className="sc-avatar sc-avatar--ai">AI</div>}
       <div className={`sc-bubble ${isUser ? 'sc-bubble--user' : 'sc-bubble--ai'}`}>
         <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-        {!isUser && msg.score !== undefined && (
-          <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#10b981', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.5rem' }}>
-            🛡️ Safety Rating: {msg.score}/100 (Safe)
+        {msg.score !== undefined && (
+          <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: msg.score < 60 ? '#10b981' : '#f59e0b', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.5rem' }}>
+            🛡️ Safety Rating: {msg.score}/100 {msg.score < 60 ? '(Safe)' : '(Warning)'}
           </div>
         )}
-        {/* ── Bias Audit Badge — only for AI replies ── */}
-        {!isUser && msg.content && (
-          <BiasAuditBadge text={msg.content} />
-        )}
+        {/* ── Bias Audit Badge ── */}
+        {msg.content && <BiasAuditBadge text={msg.content} />}
         <div className="sc-timestamp">{msg.time}</div>
       </div>
       {isUser && <div className="sc-avatar sc-avatar--user">U</div>}
@@ -211,65 +229,87 @@ export default function SecureChat() {
       role: 'ai',
       content: "Hello! I'm your ShadowVault-secured AI assistant. Every message you send is scanned by the dual-layer defense engine before reaching the AI. Ask me anything!",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    }
+    },
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [scanStatus, setScanStatus] = useState({ text: 'Shields Active', color: '#22c55e' });
   const [inputFocused, setInputFocused] = useState(false);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
+  const sendingRef = useRef(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  const hasProcessedInitial = useRef(false);
+
   // Handle initial message from Dashboard
   useEffect(() => {
     if (location.state?.initialMessage) {
       const initialText = location.state.initialMessage;
-      const sendInitial = async (text) => {
-        setMessages(prev => [...prev, { role: 'user', content: text, time: now() }]);
-        setIsTyping(true);
-        setScanStatus({ text: 'Scanning...', color: '#f59e0b' });
+      const storageKey = `processed_initial_${initialText}`;
 
-        try {
-          const formData = new FormData();
-          formData.append('prompt', text);
-          formData.append('history', JSON.stringify([]));
+      if (!sessionStorage.getItem(storageKey) && !hasProcessedInitial.current) {
+        hasProcessedInitial.current = true;
+        sessionStorage.setItem(storageKey, 'true');
 
-          const res = await fetch(`${API_URL}/api/secure-chat`, {
-            method: 'POST',
-            body: formData,
-          });
+        const sendInitial = async (text) => {
+          setMessages((prev) => [...prev, { role: 'user', content: text, time: now() }]);
+          setIsTyping(true);
+          setScanStatus({ text: 'Scanning...', color: '#f59e0b' });
 
-          if (!res.ok) throw new Error('Backend error');
+          try {
+            const formData = new FormData();
+            formData.append('prompt', text);
+            formData.append('history', JSON.stringify([]));
 
-          const data = await res.json();
-          setIsTyping(false);
+            const res = await fetch(`${API_URL}/api/secure-chat`, {
+              method: 'POST',
+              body: formData,
+            });
 
-          if (data.status === 'blocked') {
-            setScanStatus({ text: 'Threat Blocked', color: '#ef4444' });
-            setMessages(prev => [...prev, {
-              role: 'blocked',
-              level: data.risk_score > 85 ? 'critical' : 'high',
-              description: data.message,
-              score: data.risk_score,
-              threats: data.threats_found || [],
-              time: now(),
-            }]);
-          } else {
-            setScanStatus({ text: 'Safe — Executed with Gemini', color: '#3b82f6' });
-            setMessages(prev => [...prev, { role: 'ai', content: data.reply, score: data.risk_score, time: now() }]);
+            if (!res.ok) throw new Error('Backend error');
+
+            const data = await res.json();
+            setIsTyping(false);
+
+            if (data.status === 'blocked') {
+              setScanStatus({ text: 'Threat Blocked', color: '#ef4444' });
+              setMessages((prev) => {
+                const next = [...prev];
+                const lastUserIdx = next.findLastIndex(m => m.role === 'user');
+                if (lastUserIdx !== -1) next[lastUserIdx] = { ...next[lastUserIdx], score: data.risk_score };
+                next.push({
+                  role: 'blocked',
+                  level: data.risk_score > 85 ? 'critical' : 'high',
+                  description: data.message,
+                  score: data.risk_score,
+                  threats: data.threats_found || [],
+                  time: now(),
+                });
+                return next;
+              });
+            } else {
+              setScanStatus({ text: 'Safe — Executed with Gemini', color: '#3b82f6' });
+              setMessages((prev) => {
+                const next = [...prev];
+                const lastUserIdx = next.findLastIndex(m => m.role === 'user');
+                if (lastUserIdx !== -1) next[lastUserIdx] = { ...next[lastUserIdx], score: data.risk_score };
+                next.push({ role: 'ai', content: data.reply, score: data.risk_score, time: now() });
+                return next;
+              });
+            }
+            setTimeout(() => setScanStatus({ text: 'Shields Active', color: '#22c55e' }), 3000);
+          } catch {
+            setIsTyping(false);
+            setScanStatus({ text: 'Backend Offline', color: '#ef4444' });
           }
-          setTimeout(() => setScanStatus({ text: 'Shields Active', color: '#22c55e' }), 3000);
-        } catch {
-          setIsTyping(false);
-          setScanStatus({ text: 'Backend Offline', color: '#ef4444' });
-        }
-      };
+        };
 
-      sendInitial(initialText);
-      window.history.replaceState({}, document.title);
+        sendInitial(initialText);
+        window.history.replaceState({}, document.title);
+      }
     }
   }, [location.state]);
 
@@ -285,17 +325,18 @@ export default function SecureChat() {
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || isTyping) return;
+    if (!text || isTyping || sendingRef.current) return;
+    sendingRef.current = true;
 
-    setMessages(prev => [...prev, { role: 'user', content: text, time: now() }]);
+    setMessages((prev) => [...prev, { role: 'user', content: text, time: now() }]);
     setInput('');
     setIsTyping(true);
     setScanStatus({ text: 'Scanning...', color: '#f59e0b' });
 
     try {
       const history = messages
-        .filter(m => m.role === 'user' || m.role === 'ai')
-        .map(m => ({ role: m.role, content: m.content }));
+        .filter((m) => m.role === 'user' || m.role === 'ai')
+        .map((m) => ({ role: m.role, content: m.content }));
 
       const formData = new FormData();
       formData.append('prompt', text || '');
@@ -311,11 +352,14 @@ export default function SecureChat() {
         console.error('Backend error:', res.status, errorText);
         setIsTyping(false);
         setScanStatus({ text: 'Backend Error', color: '#ef4444' });
-        setMessages(prev => [...prev, {
-          role: 'ai',
-          content: `⚠️ Backend error (${res.status}): ${errorText}`,
-          time: now(),
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'ai',
+            content: `⚠️ Backend error (${res.status}): ${errorText}`,
+            time: now(),
+          },
+        ]);
         return;
       }
 
@@ -324,30 +368,46 @@ export default function SecureChat() {
 
       if (data.status === 'blocked') {
         setScanStatus({ text: 'Threat Blocked', color: '#ef4444' });
-        setMessages(prev => [...prev, {
-          role: 'blocked',
-          level: data.risk_score > 85 ? 'critical' : data.risk_score > 60 ? 'high' : 'medium',
-          description: data.message,
-          score: data.risk_score,
-          threats: data.threats_found || [],
-          time: now(),
-        }]);
+        setMessages((prev) => {
+          const next = [...prev];
+          const lastUserIdx = next.findLastIndex(m => m.role === 'user');
+          if (lastUserIdx !== -1) next[lastUserIdx] = { ...next[lastUserIdx], score: data.risk_score };
+          next.push({
+            role: 'blocked',
+            level: data.risk_score > 85 ? 'critical' : data.risk_score > 60 ? 'high' : 'medium',
+            description: data.message,
+            score: data.risk_score,
+            threats: data.threats_found || [],
+            time: now(),
+          });
+          return next;
+        });
         setTimeout(() => setScanStatus({ text: 'Shields Active', color: '#22c55e' }), 3000);
         return;
       }
 
       setScanStatus({ text: 'Safe — Executed with Gemini', color: '#3b82f6' });
-      setMessages(prev => [...prev, { role: 'ai', content: data.reply, score: data.risk_score, time: now() }]);
+      setMessages((prev) => {
+        const next = [...prev];
+        const lastUserIdx = next.findLastIndex(m => m.role === 'user');
+        if (lastUserIdx !== -1) next[lastUserIdx] = { ...next[lastUserIdx], score: data.risk_score };
+        next.push({ role: 'ai', content: data.reply, score: data.risk_score, time: now() });
+        return next;
+      });
       setTimeout(() => setScanStatus({ text: 'Shields Active', color: '#22c55e' }), 3000);
-
     } catch {
       setIsTyping(false);
       setScanStatus({ text: 'Backend Offline', color: '#ef4444' });
-      setMessages(prev => [...prev, {
-        role: 'ai',
-        content: '⚠️ Unable to connect to ShadowVault backend. Make sure the Python server is running on port 8000.',
-        time: now(),
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'ai',
+          content: '⚠️ Unable to connect to ShadowVault backend. Make sure the Python server is running on port 8000.',
+          time: now(),
+        },
+      ]);
+    } finally {
+      sendingRef.current = false;
     }
   };
 
@@ -360,7 +420,6 @@ export default function SecureChat() {
 
   return (
     <div className="page-container">
-
       {/* ── Top header bar ── */}
       <div className="sc-header">
         <div className="sc-header-left">
@@ -382,7 +441,9 @@ export default function SecureChat() {
 
       {/* ── Messages ── */}
       <div className="sc-messages">
-        {messages.map((msg, i) => <Message key={i} msg={msg} />)}
+        {messages.map((msg, i) => (
+          <Message key={i} msg={msg} />
+        ))}
         {isTyping && <TypingDots />}
         <div ref={bottomRef} />
       </div>
@@ -396,7 +457,7 @@ export default function SecureChat() {
               className="sc-glow-input"
               rows={1}
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKey}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
@@ -406,7 +467,8 @@ export default function SecureChat() {
               <div className="sc-toolbar-left">
                 <button className="sc-tool-btn" title="Attach">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
-                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
                 </button>
                 <button className="sc-tools-chip">
