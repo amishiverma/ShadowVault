@@ -1,7 +1,11 @@
 from google import genai
 import sys
 
-client = genai.Client(api_key="AIzaSyAoUIGDIsXJV8zXqSkx5FLXHHP374J1aYc")
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 try:
     response = client.models.generate_content(
