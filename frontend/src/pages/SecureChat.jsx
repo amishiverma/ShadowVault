@@ -92,18 +92,19 @@ function BiasAuditBadge({ text }) {
       {status === 'done' && result && (
         <div
           style={{
-            marginTop: '8px',
-            padding: '12px 14px',
+            marginTop: '12px',
+            padding: '14px 16px',
             borderRadius: '12px',
-            background: result.is_biased ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)',
-            border: `1px solid ${result.is_biased ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`,
-            fontSize: '0.82rem',
+            background: result.is_biased ? 'rgba(239,68,68,0.25)' : 'rgba(34,197,94,0.2)',
+            border: `1px solid ${result.is_biased ? 'rgba(239,68,68,0.8)' : 'rgba(34,197,94,0.8)'}`,
+            boxShadow: result.is_biased ? '0 0 15px rgba(239,68,68,0.2)' : 'none',
+            fontSize: '0.85rem',
             animation: 'fadeIn 0.4s ease',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: '700', color: result.is_biased ? '#f87171' : '#4ade80' }}>
-              {result.is_biased ? '⚠️ Bias Detected' : '✅ No Bias Detected'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: '800', color: result.is_biased ? '#ff6b6b' : '#4ade80', fontSize: '0.9rem', letterSpacing: '0.5px' }}>
+              {result.is_biased ? '⚠️ BIAS DETECTED' : '✅ NO BIAS DETECTED'}
             </span>
             {result.bias_type && result.bias_type !== 'none' && (
               <span
@@ -137,7 +138,7 @@ function BiasAuditBadge({ text }) {
             )}
           </div>
           {result.explanation && (
-            <div style={{ margin: 0, opacity: 0.8, lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{result.explanation}</div>
+            <div style={{ margin: 0, opacity: 1, lineHeight: '1.5', whiteSpace: 'pre-wrap', color: 'inherit' }}>{result.explanation}</div>
           )}
           <button
             onClick={() => {
@@ -180,6 +181,17 @@ function TypingDots() {
 function Message({ msg }) {
   const isUser = msg.role === 'user';
 
+  const renderBoldText = (text) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
   if (msg.role === 'blocked') {
     return (
       <div className="sc-alert">
@@ -205,7 +217,7 @@ function Message({ msg }) {
     <div className={`sc-msg ${isUser ? 'sc-msg--user' : 'sc-msg--ai'}`}>
       {!isUser && <div className="sc-avatar sc-avatar--ai">AI</div>}
       <div className={`sc-bubble ${isUser ? 'sc-bubble--user' : 'sc-bubble--ai'}`}>
-        <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+        <div style={{ whiteSpace: 'pre-wrap' }}>{renderBoldText(msg.content)}</div>
         {msg.score !== undefined && (
           <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: msg.score < 60 ? '#10b981' : '#f59e0b', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.5rem' }}>
             🛡️ Safety Rating: {msg.score}/100 {msg.score < 60 ? '(Safe)' : '(Warning)'}
@@ -237,6 +249,58 @@ export default function SecureChat() {
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
   const sendingRef = useRef(false);
+
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const baseInputRef = useRef('');
+
+  useEffect(() => {
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      
+      recognitionRef.current.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setInput(baseInputRef.current + transcript);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please try Chrome or Edge.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      baseInputRef.current = input + (input.trim() ? ' ' : '');
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error('Failed to start speech recognition:', e);
+      }
+    }
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -327,6 +391,11 @@ export default function SecureChat() {
     const text = input.trim();
     if (!text || isTyping || sendingRef.current) return;
     sendingRef.current = true;
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
 
     setMessages((prev) => [...prev, { role: 'user', content: text, time: now() }]);
     setInput('');
@@ -461,7 +530,7 @@ export default function SecureChat() {
               onKeyDown={handleKey}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
-              placeholder="Ask anything — ShadowVault will protect you..."
+              placeholder={isListening ? "Listening..." : "Ask anything — ShadowVault will protect you..."}
             />
             <div className="sc-toolbar">
               <div className="sc-toolbar-left">
@@ -479,13 +548,28 @@ export default function SecureChat() {
                 </button>
               </div>
               <div className="sc-toolbar-right">
-                <button className="sc-mic-btn" title="Voice input">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" y1="19" x2="12" y2="23" />
-                    <line x1="8" y1="23" x2="16" y2="23" />
-                  </svg>
+                <button className="sc-mic-btn" title="Voice input" onClick={toggleListening} style={{ color: isListening ? '#ef4444' : '' }}>
+                  {isListening ? (
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{
+                        position: 'absolute', width: '24px', height: '24px', borderRadius: '50%',
+                        background: 'rgba(239, 68, 68, 0.4)', animation: 'pulse-mic 1.5s infinite'
+                      }}></span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ position: 'relative', zIndex: 1 }}>
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="12" y1="19" x2="12" y2="23" />
+                      <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                  )}
                 </button>
                 <button
                   className="sc-glow-send"
@@ -510,6 +594,10 @@ export default function SecureChat() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+        @keyframes pulse-mic {
+          0% { transform: scale(0.8); opacity: 1; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
       `}</style>
     </div>
   );

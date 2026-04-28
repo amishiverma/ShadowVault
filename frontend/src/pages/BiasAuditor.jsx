@@ -178,8 +178,12 @@ export default function BiasAuditor() {
                 width: '100%',
                 padding: '20px',
                 borderRadius: '12px',
-                border: file ? '1px solid rgba(110,60,188,0.5)' : '1px dashed rgba(255,255,255,0.2)',
-                background: file ? 'rgba(110,60,188,0.08)' : 'transparent',
+                border: file 
+                  ? '1px solid rgba(110,60,188,0.5)' 
+                  : `1px dashed ${isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.2)'}`,
+                background: file 
+                  ? 'rgba(110,60,188,0.08)' 
+                  : (isLight ? 'rgba(0,0,0,0.02)' : 'transparent'),
                 cursor: 'pointer',
                 textAlign: 'center',
                 transition: 'all 0.3s ease',

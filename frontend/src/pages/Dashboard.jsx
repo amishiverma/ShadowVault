@@ -1,28 +1,84 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
   const [theme, setTheme] = useState(document.documentElement.getAttribute('data-theme') || 'dark');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const basePromptRef = useRef('');
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setTheme(document.documentElement.getAttribute('data-theme') || 'dark');
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => observer.disconnect();
+
+    // Initialize Web Speech API
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      
+      recognitionRef.current.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setPrompt(basePromptRef.current + transcript);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      observer.disconnect();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
   }, []);
 
   const handleSend = () => {
     if (!prompt.trim()) return;
-    // Navigate to SecureChat with the initial message
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
     navigate('/secure-chat', { state: { initialMessage: prompt } });
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSend();
+    }
+  };
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please try Chrome or Edge.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      basePromptRef.current = prompt + (prompt.trim() ? ' ' : '');
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error('Failed to start speech recognition:', e);
+      }
     }
   };
 
@@ -70,14 +126,36 @@ export default function Dashboard() {
               outline: 'none',
               color: isLight ? '#1a1a1a' : '#ffffff'
             }} 
-            placeholder="Ask ShadowVault..."
+            placeholder={isListening ? "Listening..." : "Ask ShadowVault..."}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginLeft: '10px' }}>
-            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: isLight ? '#5f6368' : 'rgba(255,255,255,0.5)' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            <button 
+              onClick={toggleListening}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                cursor: 'pointer', 
+                color: isListening ? '#ef4444' : (isLight ? '#5f6368' : 'rgba(255,255,255,0.5)'),
+                transition: 'color 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+              {isListening ? (
+                // Pulse effect or stop icon when listening
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{
+                    position: 'absolute', width: '30px', height: '30px', borderRadius: '50%',
+                    background: 'rgba(239, 68, 68, 0.4)', animation: 'pulse-mic 1.5s infinite'
+                  }}></span>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'relative', zIndex: 1 }}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                </div>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+              )}
             </button>
             <button 
               onClick={handleSend}
@@ -98,6 +176,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      
+      <style>{`
+        @keyframes pulse-mic {
+          0% { transform: scale(0.8); opacity: 1; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
