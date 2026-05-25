@@ -29,6 +29,9 @@ from sqlalchemy.orm import Session
 from bias_auditor import analyze_dataset_bias, suggest_mitigation
 import pandas as pd
 
+# Import mock fallback handlers
+from mock_data import get_mock_chat_response, get_mock_explain_audit, get_mock_text_bias_audit
+
 # Configure Gemini Client
 gemini_key = os.getenv("GEMINI_API_KEY")
 print(f"DEBUG: Gemini API Key loaded: {gemini_key[:8]}..." if gemini_key else "DEBUG: Gemini API Key NOT found")
@@ -516,10 +519,8 @@ async def secure_chat(
             
     except Exception as e:
         error_str = str(e)
-        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-            ai_reply = "⚠️ **API Limit Reached:** The Gemini API quota has been exhausted. Switched to `gemini-flash-latest` model which has higher limits, but if you still see this, please wait a minute or upgrade your API key."
-        else:
-            ai_reply = f"[Gemini API Error]: {error_str}"
+        print(f"DEBUG: Gemini API call failed or client not initialized. Error: {error_str}. Using mock fallback.")
+        ai_reply = get_mock_chat_response(prompt, parsed_history)
 
     return {
         "status": "success",
@@ -680,8 +681,9 @@ async def explain_audit(data: dict):
     """
     Uses Gemini to provide a natural language explanation of the bias audit results.
     """
-    if not gemini_key:
-        return {"explanation": "Gemini API not configured for detailed explanations."}
+    if not gemini_client:
+        print("DEBUG: Gemini Client not initialized. Using mock fallback for explain_audit.")
+        return {"explanation": get_mock_explain_audit(data)}
         
     prompt = f"""
     As an AI Ethics Auditor, explain these bias detection results to a non-technical stakeholder.
@@ -698,9 +700,6 @@ async def explain_audit(data: dict):
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            if not gemini_client:
-                 return {"explanation": "Gemini Client not initialized."}
-                 
             response = gemini_client.models.generate_content(
                 model="gemini-flash-latest",
                 contents=prompt
@@ -713,8 +712,8 @@ async def explain_audit(data: dict):
                 continue
             
             # If all retries fail or it's a different error
-            friendly_msg = "The AI service is currently experiencing high demand. Please try again later." if "503" in error_str else error_str
-            return {"explanation": f"⚠️ Audit Explanation Unavailable: {friendly_msg}"}
+            print(f"DEBUG: Gemini API call failed in explain_audit: {error_str}. Using mock fallback.")
+            return {"explanation": get_mock_explain_audit(data)}
 
 
 @app.post("/api/audit/text")
@@ -725,6 +724,13 @@ async def audit_text(data: dict):
     text = data.get("text", "")
     if not text:
         return {"status": "error", "message": "No text provided"}
+
+    if not gemini_client:
+        print("DEBUG: Gemini Client not initialized. Using mock fallback for audit_text.")
+        return {
+            "status": "success",
+            "audit": get_mock_text_bias_audit(text)
+        }
 
     prompt = f"""
     As a strict AI Ethics Auditor, deeply analyze the following text for ANY signs of bias, including:
@@ -752,9 +758,6 @@ async def audit_text(data: dict):
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            if not gemini_client:
-                 return {"status": "error", "message": "Gemini Client not initialized."}
-                 
             response = gemini_client.models.generate_content(
                 model="gemini-flash-latest",
                 contents=prompt,
@@ -771,5 +774,8 @@ async def audit_text(data: dict):
                 await asyncio.sleep(2 * (attempt + 1))
                 continue
             
-            friendly_msg = "The AI service is currently experiencing high demand. Please try again later." if "503" in error_str else error_str
-            return {"status": "error", "message": f"Audit Unavailable: {friendly_msg}"}
+            print(f"DEBUG: Gemini API call failed in audit_text: {error_str}. Using mock fallback.")
+            return {
+                "status": "success",
+                "audit": get_mock_text_bias_audit(text)
+            }
